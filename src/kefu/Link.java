@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  *
  * @author marco
  */
-public final class Link
+public class Link
 {
     private static int nextId = 0;
     
@@ -103,6 +103,10 @@ public final class Link
         return oneWay;
     }
     
+    /**
+     *
+     * @param id
+     */
     public Link(int id)
     {
         this.id = id;
@@ -116,7 +120,6 @@ public final class Link
         }
     }
     
-    public static List<String> names = new ArrayList<>();
     private void LoadLinkDetails() throws Exception
     {
         if (linkDetailsLoaded)
@@ -176,6 +179,11 @@ public final class Link
         }
     }
     
+    /**
+     *
+     * @param minutes
+     * @return
+     */
     public Crossing[] CreateCrossing(double minutes)
     {
         double maxSpeedMeterPerMinute = speedLimit * 1000 / (double)60;
@@ -203,25 +211,18 @@ public final class Link
                 nextId -= 1;
                 Crossing crn = new Crossing(nextId, fWay.getSecondX(), fWay.getSecondY(), false);
                 crn.setSpeedLimitIfLink(speedLimit);
-                //crn.setSpeedLimitIfLink((int)minutes);
                 allCrossings.add(crn);
+                
+                continue;
             }
             else if (minutes == 0)
             {
                 nextId -= 1;
                 Crossing crn = new Crossing(nextId, fWay.getSecondX(), fWay.getSecondY(), false);
                 crn.setSpeedLimitIfLink(speedLimit);
-                //crn.setSpeedLimitIfLink((int)minutes);
                 allCrossings.add(crn);
                 
-                Crossing[] retval = new Crossing[allCrossings.size()];
-                
-                for (int i = 0; i < allCrossings.size(); i++)
-                {
-                    retval[i] = allCrossings.get(i);
-                }
-                
-                return retval;
+                return allCrossings.toArray(new Crossing[allCrossings.size()]);
             }
             else if (minutes < 0)
             {
@@ -271,20 +272,17 @@ public final class Link
                 //crn.setSpeedLimitIfLink(0);
                 allCrossings.add(crn);
                 
-                Crossing[] retval = new Crossing[allCrossings.size()];
-                
-                for (int i = 0; i < allCrossings.size(); i++)
-                {
-                    retval[i] = allCrossings.get(i);
-                }
-                
-                return retval;
+                return allCrossings.toArray(new Crossing[allCrossings.size()]);
             }
         }
         
         return null;
     }
     
+    /**
+     *
+     * @return
+     */
     public Crossing[] getWaysAsCrossings()
     {        
         Crossing[] ncr = new Crossing[ways.length - 1];
@@ -297,6 +295,12 @@ public final class Link
         return ncr;
     }
     
+    /**
+     *
+     * @param cr
+     * @param minutes
+     * @return
+     */
     public Crossing getAlternativCrossing(Crossing cr, double minutes)
     {
         if (cr.getId() == firstCrossing.getId())
@@ -313,6 +317,10 @@ public final class Link
         }
     }
     
+    /**
+     *
+     * @return
+     */
     public double getDurationToDrive()
     {
         double maxSpeedMeterPerMinute = speedLimit * 1000 / (double)60;

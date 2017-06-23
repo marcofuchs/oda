@@ -5,19 +5,17 @@
  */
 package kefu;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 /**
  *
  * @author marco
  */
 public class Crossing
-{
-    private static List<Crossing> alreadyDrivenCrossings = new ArrayList<>();
-    
+{    
     private final int id;
     private final int lat;
     private final int lon;
@@ -68,6 +66,13 @@ public class Crossing
         return links;
     }
     
+    /**
+     *
+     * @param id
+     * @param lat
+     * @param lon
+     * @param isIsolated
+     */
     public Crossing(int id, int lat, int lon, boolean isIsolated)
     {
         this.id = id;
@@ -76,22 +81,29 @@ public class Crossing
         this.isolated = isIsolated;
     }
     
-    public static List<Crossing> drive(double minutes, Crossing start)
+    /**
+     *
+     * @param minutes
+     * @param start
+     * @return
+     */
+    public static Crossing[] drive(double minutes, Crossing start)
     {
         double interval = 0.5;
         double last = 0;
         
         Map<Integer, Crossing> closedDict = new HashMap();
         
-        List<Double> openedInts = new ArrayList<>();
-        List<Crossing> opened = new ArrayList<>();
+        Map<Integer, Crossing> openedInts = new HashMap<>();
+        Comparator<Crossing> comparator = new CrossingComparator();
+        PriorityQueue<Crossing> opened = new PriorityQueue<>(10, comparator);
         
         opened.add(start);
-        openedInts.add((double) start.id);
+        openedInts.put(start.id, start);
         
-        while (!opened.isEmpty() && opened.get(0).maxMinutesOnCrossing < minutes)
+        while (!opened.isEmpty())
         {
-            Crossing elem = opened.get(0);
+            Crossing elem = opened.peek();
             if (elem.maxMinutesOnCrossing > last + interval)
             {
                 last += interval;
@@ -105,7 +117,6 @@ public class Crossing
                 {
                     // Hier ansetzen und stattdessen eine "Kreuzung" erzeugen, 
                     // die genau nach 15 Minuten erreichbar ist.
-                    
                     Crossing[] rcr = elem.links[i].CreateCrossing(minutes - elem.maxMinutesOnCrossing);
                     
                     for (Crossing crossing : rcr)
@@ -122,55 +133,46 @@ public class Crossing
                     continue;
                 }
 
-                if (openedInts.contains((double) newCrossings[i].id))
+                if (openedInts.containsKey(newCrossings[i].id))
                 {
-                    // Es gibt bereits einen schnelleren Weg zu diesem Crossing.
+                    if (newCrossings[i].maxMinutesOnCrossing < openedInts.get(newCrossings[i].id).maxMinutesOnCrossing)
+                    {
+                        opened.remove(openedInts.get(newCrossings[i].id));
+                        openedInts.get(newCrossings[i].id).maxMinutesOnCrossing = newCrossings[i].maxMinutesOnCrossing;
+                        opened.add(openedInts.get(newCrossings[i].id));
+                    } 
+                    
                     continue;
                 }
                 
-                //Crossing[] ncr = elem.links[i].getWaysAsCrossings();
-                //for (Crossing crossing : ncr)
-                //{
-                  //  closedDict.put(crossing.id, crossing);
-                //}
-                
-                Boolean added = false;
-                for (int j = 0; j < opened.size(); j++)
+                Crossing[] ncr = elem.links[i].getWaysAsCrossings();
+                for (Crossing crossing : ncr)
                 {
-                    if (newCrossings[i].maxMinutesOnCrossing < opened.get(j).maxMinutesOnCrossing)
-                    {
-                        opened.add(j, newCrossings[i]);
-                        openedInts.add((double) newCrossings[i].id);
-                        added = true;
-                        break;
-                    }
+                    closedDict.put(crossing.id, crossing);
                 }
                 
-                if (!added)
-                {
-                    opened.add(newCrossings[i]);
-                    openedInts.add((double) newCrossings[i].id);
-                }
+                opened.add(newCrossings[i]);
+                openedInts.put(newCrossings[i].id, newCrossings[i]);
             }
             
             // Das Element an Stelle 0 ist nicht mehr schneller zu erreichen.
-            Crossing nextFastest = opened.remove(0);
-            openedInts.remove((double) nextFastest.id);
+            Crossing nextFastest = opened.poll();
+            openedInts.remove(nextFastest.id);
             
             closedDict.put(nextFastest.id, nextFastest);
         }
         
-        if (opened.isEmpty())
-        {
-            System.out.println("Alle innerhalb der Zeit erreichbare Punkte wurden gefunden.");
-        }
-        
-        List<Crossing> closed = new ArrayList<>();
-        closedDict.forEach((key, value) -> closed.add(value));
-        
-        return closed;
+        System.out.println("Alle innerhalb der Zeit erreichbare Punkte wurden gefunden.");
+          
+        return closedDict.values().toArray(new Crossing[closedDict.values().size()]);
     }
     
+    /**
+     *
+     * @param cr
+     * @param minutes
+     * @return
+     */
     public static Crossing[] getNextCrossings(Crossing cr, double minutes)
     {
         cr.links = Datareader.ReadLinksOfCrossing(cr);

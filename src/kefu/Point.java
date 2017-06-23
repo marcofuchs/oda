@@ -5,8 +5,7 @@
  */
 package kefu;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.vividsolutions.jts.geom.Geometry;
 
 /**
  *
@@ -14,64 +13,45 @@ import java.util.List;
  */
 class Point
 {
-    private static List<Point> allPoints = new ArrayList<>();
+    private Geometry geo;
     
-    private int lat;
-    private int lon;
+    private String name;
 
     /**
      * @return the lat
      */
-    public int getLat()
+    public Geometry getGeo()
     {
-        return lat;
+        return geo;
     }
 
     /**
      * @param lat the lat to set
      */
-    public void setLat(int lat)
+    public void setGeo(Geometry newGeo)
     {
-        this.lat = lat;
+        this.geo = newGeo;
     }
 
     /**
      * @return the lon
      */
-    public int getLon()
+    public String getName()
     {
-        return lon;
+        return name;
     }
 
     /**
      * @param lon the lon to set
      */
-    public void setLon(int lon)
+    public void setName(String newName)
     {
-        this.lon = lon;
+        this.name = newName;
     }
     
-    public Point(int lat, int lon)
+    Point(Geometry geo, String name)
     {
-        this.lat = lat;
-        this.lon = lon;
-    }
-
-    /**
-     * @return the allPoints
-     */
-    public static List<Point> getAllPoints()
-    {
-        return allPoints;
-    }
-    
-    public static Boolean ListContainsPoint(int lat, int lon)
-    {
-        if (allPoints.stream().anyMatch((allPoint) -> (allPoint.lat == lat && allPoint.lon == lon)))
-        {
-            return true;
-        }
-        
-        return false;
+        this.geo = geo;
+        this.name = name;
     }
 }

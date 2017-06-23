@@ -80,6 +80,13 @@ public class Way
         this.secondY = secondY;
     }
     
+    /**
+     *
+     * @param fX
+     * @param fY
+     * @param sX
+     * @param sY
+     */
     public Way(int fX, int fY, int sX, int sY)
     {
         this.firstX = fX;

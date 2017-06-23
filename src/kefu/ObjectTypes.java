@@ -7,6 +7,7 @@ package kefu;
 
 import fu.keys.LSIClass;
 import fu.keys.LSIClassCentre;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,10 +17,11 @@ import java.util.Map;
  */
 public class ObjectTypes
 {
-    private static Map<Integer, LSIClass> oTypes = new HashMap<>();
-    private static Map<Integer, Integer> speedLimits = new HashMap<>();
+    private static final Map<Integer, LSIClass> oTypes = new HashMap<>();
+    private static final Map<Integer, Integer> speedLimits = new HashMap<>();
 
     /**
+     * @param id
      * @return the oTypes
      */
     public static LSIClass getLsiClass(int id)
@@ -32,6 +34,11 @@ public class ObjectTypes
         return oTypes.get(id);
     }
     
+    /**
+     *
+     * @param id
+     * @return
+     */
     public static Integer getLimit(int id)
     {
         switch (id)
@@ -89,8 +96,16 @@ public class ObjectTypes
         }
     }
     
+    /**
+     *
+     * @return
+     */
     public static Map<Integer, LSIClass> allClasses()
     {
-        return oTypes;
+        return Collections.unmodifiableMap(oTypes);
+    }
+
+    private ObjectTypes()
+    {
     }
 }

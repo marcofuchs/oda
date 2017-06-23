@@ -5,12 +5,16 @@
  */
 package kefu;
 
-import fu.keys.LSIClass;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LinearRing;
+import com.vividsolutions.jts.io.ParseException;
 import fu.util.ConcaveHullGenerator;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import pp.dorenda.client2.additional.UniversalPainterWriter;
@@ -21,7 +25,20 @@ import pp.dorenda.client2.additional.UniversalPainterWriter;
  */
 public class Writer
 {
-    public static void WritePoints(List<Crossing> crossings, double startlat, double startlon, int minutes)
+    private static final GeometryFactory geomfact=new GeometryFactory();
+
+    /**
+     *
+     * @param crossings
+     * @param startlat
+     * @param startlon
+     * @param minutes
+     * @param lowerbound
+     * @param upperbound
+     * @throws SQLException
+     * @throws ParseException
+     */
+    public static void WritePoints(Crossing[] crossings, double startlat, double startlon, int minutes, String lowerbound, String upperbound) throws SQLException, ParseException
     {
         try
         {            
@@ -31,44 +48,59 @@ public class Writer
             // Startpunkt muss immer zuerste geschrieben werden,
             // da das Kartentool beim Laden den ersten Punkt in der Datei fokussiert!
             System.out.println("Schreibe den Startpunkt.");
-            //ArrayList<double[]> newlatlons = ConcaveHullGenerator.concaveHull(latlons, 0.2);
             writer.position(startlat / 1000000.0, startlon / 1000000.0, 0, 0, 0, 255, 10, "Start fuer " + minutes + " Minuten");
             
             ArrayList<double[]> latlons = new ArrayList<>();
-            for (int i = 0; i < crossings.size(); i++)
+            for (Crossing crossing : crossings)
             {
                 double[] ll = new double[2];
-                ll[0] = (double)crossings.get(i).getLat() / 1000000;
-                ll[1] = (double)crossings.get(i).getLon() / 1000000;
+                ll[0] = (double) crossing.getLat() / 1000000;
+                ll[1] = (double) crossing.getLon() / 1000000;
                 latlons.add(ll);
-                
-                //if (crossings.get(i).getSpeedLimitIfLink() != 0)
-                {
-                    //writer.position(ll[0], ll[1], 0, 0, 0, 255, 10, "" + crossings.get(i).getSpeedLimitIfLink());
-                }
             }
             
-            crossings.clear();
             crossings = null;
             
+            double alpha = 0.01;
+            
             System.out.println("Berechne die konkave Huelle ueber " + latlons.size() +  " Punkte.");
-            ArrayList<double[]> newlatlons = ConcaveHullGenerator.concaveHull(latlons, 0.05);
+            ArrayList<double[]> newlatlons = ConcaveHullGenerator.concaveHull(latlons, alpha);
+            
+            List<Coordinate> coords = new ArrayList<>();
+            newlatlons.forEach((point) ->
+            {
+                coords.add(new Coordinate(point[1], point[0]));
+            });
+
+            coords.add(coords.get(0));
+
+            Coordinate[] coordArray = new Coordinate[coords.size()];
+            coords.toArray(coordArray);
+            //coords[3]=coords[0];
+            Geometry polygon = geomfact.createPolygon(geomfact.createLinearRing(coordArray),new LinearRing[0]);//geomfact.createLinearRing(coordArray),new LinearRing[0]);
+
+            List<Point> geoms = DbConnection.GetPossibleInRangeObjects(Integer.parseInt(lowerbound), Integer.parseInt(upperbound), polygon);
+            
             
             System.out.println("Schreibe results.txt");
             writer.polygon(newlatlons, 0, 0, 255, 50);
             
+            geoms.forEach((geom) ->
+            {
+                writer.flag(geom.getGeo().getCentroid().getY(), geom.getGeo().getCentroid().getX(), (int) (Math.random() * 255), (int) (Math.random() * 255), (int) (Math.random() * 255), 255, geom.getName().replace('"', '\''));
+            });
+            
             System.out.println("Schließe results.txt");
             writer.close();
-            
-            for (Map.Entry<Integer, LSIClass> entry : ObjectTypes.allClasses().entrySet())
-            {
-                System.out.println(entry.getKey() + ": " + entry.getValue().className);
-            }
             
             System.out.println("Fertig.");
         } catch (IOException ex)
         {
             Logger.getLogger(Writer.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private Writer()
+    {
     }
 }

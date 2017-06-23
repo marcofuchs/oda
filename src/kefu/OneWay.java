@@ -11,7 +11,19 @@ package kefu;
  */
 public enum OneWay
 {
+
+    /**
+     *
+     */
     None,
+
+    /**
+     *
+     */
     FirstToSecond,
+
+    /**
+     *
+     */
     SecondToFirst
 }

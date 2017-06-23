@@ -5,9 +5,7 @@
  */
 package kefu;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,7 +14,7 @@ import java.util.Map;
  */
 public class Domain
 {
-    private static Map<Integer, Domain> loadedDomains = new HashMap<>();
+    private static final Map<Integer, Domain> loadedDomains = new HashMap<>();
     
     private int id;
     private String name;
@@ -78,6 +76,10 @@ public class Domain
         return loadedDomains;
     }
     
+    /**
+     *
+     * @param id
+     */
     public Domain(int id)
     {
         this.id = id;

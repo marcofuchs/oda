@@ -6,7 +6,6 @@
 package kefu;
 
 import fu.keys.LSIClass;
-import fu.keys.LSIClassCentre;
 import nav.NavData;
 
 /**
@@ -18,6 +17,11 @@ public class Datareader
     private static NavData data;
     private static String cacheFile;
     
+    /**
+     *
+     * @param newCacheFile
+     * @return
+     */
     public static Boolean createStaticNavData(String newCacheFile)
     {
         try
@@ -32,11 +36,20 @@ public class Datareader
         }
     }
     
+    /**
+     *
+     */
     public static void disposeStaticNavData()
     {
         data = null;
     }
     
+    /**
+     *
+     * @param lat
+     * @param lon
+     * @return
+     */
     public static Crossing ReadNearestCrossing(int lat, int lon)
     {        
         int crossingId = data.getNearestCrossing(lat, lon);
@@ -47,6 +60,11 @@ public class Datareader
         return new Crossing(crossingId, crossingLat, crossingLon, crossingIsolated);
     }
     
+    /**
+     *
+     * @param crossing
+     * @return
+     */
     public static Link[] ReadLinksOfCrossing(Crossing crossing)
     {
         int[] ids = data.getLinksForCrossing(crossing.getId());   
@@ -62,6 +80,11 @@ public class Datareader
         return links;
     }
     
+    /**
+     *
+     * @param id
+     * @return
+     */
     public static Crossing LoadCrossingFrom(int id)
     {     
         int crossingId = data.getCrossingIDFrom(id);
@@ -72,6 +95,11 @@ public class Datareader
         return new Crossing(crossingId, crossingLat, crossingLon, crossingIsolated);
     }
     
+    /**
+     *
+     * @param id
+     * @return
+     */
     public static Crossing LoadCrossingTo(int id)
     {     
         int crossingId = data.getCrossingIDTo(id);
@@ -82,11 +110,21 @@ public class Datareader
         return new Crossing(crossingId, crossingLat, crossingLon, crossingIsolated);
     }
     
+    /**
+     *
+     * @param linkId
+     * @return
+     */
     public static int GetDomainOfLink(int linkId)
     {
         return data.getDomainID(linkId);
     }
     
+    /**
+     *
+     * @param domainId
+     * @return
+     */
     public static Domain ReadDomain(int domainId)
     {
         if (Domain.getLoadedDomains().containsKey(domainId))
@@ -115,6 +153,12 @@ public class Datareader
         return domain;
     }
     
+    /**
+     *
+     * @param domain
+     * @param linkId
+     * @return
+     */
     public static Way[] getWaysOfLink(Domain domain, int linkId)
     {
         int firstWayNumber = data.getDomainPosNrFrom(linkId);
@@ -145,16 +189,31 @@ public class Datareader
         }
     }
     
+    /**
+     *
+     * @param linkId
+     * @return
+     */
     public static int getLinkLength (int linkId)
     {
         return data.getLengthMeters(linkId);
     }
     
+    /**
+     *
+     * @param linkId
+     * @return
+     */
     public static int getMaxSpeed (int linkId)
     {
         return data.getMaxSpeedKMperHours(linkId);
     }
     
+    /**
+     *
+     * @param linkId
+     * @return
+     */
     public static OneWay getOneWayInformation(int linkId)
     {
         if (data.goesCounterOneway(linkId))
@@ -169,10 +228,19 @@ public class Datareader
         return OneWay.None;
     }
     
+    /**
+     *
+     * @param linkId
+     * @return
+     */
     public static LSIClass getLSIClassOfLink(int linkId)
     {
         int lsiId = data.getLSIclass(linkId);
         
         return ObjectTypes.getLsiClass(lsiId);
+    }
+
+    private Datareader()
+    {
     }
 }
