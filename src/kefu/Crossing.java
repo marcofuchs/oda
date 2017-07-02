@@ -1,220 +1,152 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package kefu;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.ArrayList;
+import nav.NavData;
 
 /**
- *
+ * Stellt eine Kreuzung im Straßennetz dar.
+ * 
  * @author marco
  */
-public class Crossing
-{    
+public class Crossing {
     private final int id;
     private final int lat;
     private final int lon;
-    private final boolean isolated;
-    private Link[] links;
-    
-    private int speedLimitIfLink = 0;
-    
-    private double maxMinutesOnCrossing = 0;
-    
+    private CrossingConnection[] targets = null;
+    private int ancestorId = -1;
+
+    private double maxDurationToReachCrossing = 0;
+
     /**
-     * @return the x
+     * @return gibt die Latitude zurueck
      */
-    public int getLat()
-    {
+    public int getLat() {
         return lat;
     }
 
     /**
-     * @return the y
+     * @return gibt die Longitude zurueck
      */
-    public int getLon()
-    {
+    public int getLon() {
         return lon;
     }
 
     /**
-     * @return the id
+     * @return gibt den eindeutigen Identifizierer der Crossing-Instanz zurueck
      */
-    public int getId()
-    {
+    public int getId() {
         return id;
     }
 
     /**
-     * @return the isIsolated
+     * @return the maxDurationToReachCrossing
      */
-    public boolean isIsolated()
-    {
-        return isolated;
+    public double getMaxDurationToReachCrossing() {
+        return maxDurationToReachCrossing;
     }
 
     /**
-     * @return the links
+     * @param maxDurationToReachCrossing the maxDurationToReachCrossing to set
      */
-    public Link[] getLinks()
-    {
-        return links;
+    public void setMaxDurationToReachCrossing(double maxDurationToReachCrossing) {
+        this.maxDurationToReachCrossing = maxDurationToReachCrossing;
     }
-    
+
     /**
+     * @return the ancestorId
+     */
+    public int getAncestorId() {
+        return ancestorId;
+    }
+
+    /**
+     *
+     * Konstruktor des Crossings
      *
      * @param id
      * @param lat
      * @param lon
      * @param isIsolated
+     * @param ancestorId
      */
-    public Crossing(int id, int lat, int lon, boolean isIsolated)
-    {
+    private Crossing(int id, int lat, int lon, boolean isIsolated, int ancestorId) {
         this.id = id;
         this.lat = lat;
         this.lon = lon;
-        this.isolated = isIsolated;
+        this.ancestorId = ancestorId;
     }
     
     /**
-     *
-     * @param minutes
-     * @param start
-     * @return
+     * Erzeugt ein neues Crossing anhand der mitgegebenen Daten
+     * 
+     * @param navData NavData-Klasse
+     * @param crossingId ID des Crossing
+     * @param ancestorId ID des Vorgängers
+     * @return ein neues Crossing, das als Ziel des Vorgängers genutzt werden kann
      */
-    public static Crossing[] drive(double minutes, Crossing start)
-    {
-        double interval = 0.5;
-        double last = 0;
-        
-        Map<Integer, Crossing> closedDict = new HashMap();
-        
-        Map<Integer, Crossing> openedInts = new HashMap<>();
-        Comparator<Crossing> comparator = new CrossingComparator();
-        PriorityQueue<Crossing> opened = new PriorityQueue<>(10, comparator);
-        
-        opened.add(start);
-        openedInts.put(start.id, start);
-        
-        while (!opened.isEmpty())
-        {
-            Crossing elem = opened.peek();
-            if (elem.maxMinutesOnCrossing > last + interval)
-            {
-                last += interval;
-                System.out.println("Alle innerhalb von " + last + " Minuten erreichbaren Kreuzungen wurden gefunden.");
-            }
-            
-            Crossing[] newCrossings = getNextCrossings(elem, elem.maxMinutesOnCrossing);
-            for (int i = 0; i < newCrossings.length; i++)
-            {
-                if (newCrossings[i].maxMinutesOnCrossing > minutes)
-                {
-                    // Hier ansetzen und stattdessen eine "Kreuzung" erzeugen, 
-                    // die genau nach 15 Minuten erreichbar ist.
-                    Crossing[] rcr = elem.links[i].CreateCrossing(minutes - elem.maxMinutesOnCrossing);
-                    
-                    for (Crossing crossing : rcr)
-                    {
-                        crossing.maxMinutesOnCrossing = minutes;
-                        closedDict.put(crossing.id, crossing);
-                    }
-                    
-                    continue;
-                }
-                
-                if (closedDict.containsKey(newCrossings[i].id))
-                {
-                    continue;
-                }
+    public static Crossing create(NavData navData, int crossingId, int ancestorId){
+        int crossingLat = navData.getCrossingLatE6(crossingId);
+        int crossingLon = navData.getCrossingLongE6(crossingId);
+        boolean crossingIsolated = navData.isIsolatedCrossing(crossingId);
 
-                if (openedInts.containsKey(newCrossings[i].id))
-                {
-                    if (newCrossings[i].maxMinutesOnCrossing < openedInts.get(newCrossings[i].id).maxMinutesOnCrossing)
-                    {
-                        opened.remove(openedInts.get(newCrossings[i].id));
-                        openedInts.get(newCrossings[i].id).maxMinutesOnCrossing = newCrossings[i].maxMinutesOnCrossing;
-                        opened.add(openedInts.get(newCrossings[i].id));
-                    } 
-                    
-                    continue;
-                }
-                
-                Crossing[] ncr = elem.links[i].getWaysAsCrossings();
-                for (Crossing crossing : ncr)
-                {
-                    closedDict.put(crossing.id, crossing);
-                }
-                
-                opened.add(newCrossings[i]);
-                openedInts.put(newCrossings[i].id, newCrossings[i]);
-            }
-            
-            // Das Element an Stelle 0 ist nicht mehr schneller zu erreichen.
-            Crossing nextFastest = opened.poll();
-            openedInts.remove(nextFastest.id);
-            
-            closedDict.put(nextFastest.id, nextFastest);
+        return new Crossing(crossingId, crossingLat, crossingLon, crossingIsolated, ancestorId);
+    }
+
+    /**
+     * Liest zu einer gegebenen Latitude und Longitude das naechstgelegene
+     * Crossing und gibt dieses zurueck.
+     *
+     * @param navData NavData-Klasse
+     * @param lat die Latitude
+     * @param lon die Longitude
+     * @return das naeheste Crossing zu gegebener Latitude und Longitude
+     */
+    public static Crossing readNearesCrossingFromNavData(NavData navData, int lat, int lon) {
+        int crossingId = navData.getNearestCrossing(lat, lon);
+        int crossingLat = navData.getCrossingLatE6(crossingId);
+        int crossingLon = navData.getCrossingLongE6(crossingId);
+        boolean crossingIsolated = navData.isIsolatedCrossing(crossingId);
+
+        return new Crossing(crossingId, crossingLat, crossingLon, crossingIsolated, -1);
+    }
+
+    /**
+     * Sucht die vom Crossing aus erreichbaren Nachbarn, die nicht der Vorgänger des Crossings sind.
+     * 
+     * @param navData
+     * @return eine Liste der Nachbarn
+     */
+    public CrossingConnection[] getNeighbours(NavData navData) {
+        if (targets != null) {
+            // Wir haben die Nachbarn schon mal gesucht.
+            return targets;
         }
         
-        System.out.println("Alle innerhalb der Zeit erreichbare Punkte wurden gefunden.");
-          
-        return closedDict.values().toArray(new Crossing[closedDict.values().size()]);
-    }
-    
-    /**
-     *
-     * @param cr
-     * @param minutes
-     * @return
-     */
-    public static Crossing[] getNextCrossings(Crossing cr, double minutes)
-    {
-        cr.links = Datareader.ReadLinksOfCrossing(cr);
-        
-        Crossing[] crn = new Crossing[cr.links.length];
-        for (int i = 0; i < cr.links.length; i++)
-        {
-            crn[i] = cr.links[i].getAlternativCrossing(cr, minutes);
+        // Teil 1: Alle Links der Reihe nach analysieren
+        int[] ids = navData.getLinksForCrossing(getId());
+        int linkCount = ids.length;
+
+        Link[] links = new Link[linkCount];
+
+        for (int i = 0; i < linkCount; i++) {
+            links[i] = Link.readLink(navData, ids[i], this);
         }
         
-        return crn;
-    }
-
-    /**
-     * @return the maxMinutesOnCrossing
-     */
-    public double getMaxMinutesOnCrossing()
-    {
-        return maxMinutesOnCrossing;
-    }
-
-    /**
-     * @param maxMinutesOnCrossing the maxMinutesOnCrossing to set
-     */
-    public void setMaxMinutesOnCrossing(double maxMinutesOnCrossing)
-    {
-        this.maxMinutesOnCrossing = maxMinutesOnCrossing;
-    }
-
-    /**
-     * @return the speedLimitIfLink
-     */
-    public int getSpeedLimitIfLink()
-    {
-        return speedLimitIfLink;
-    }
-
-    /**
-     * @param speedLimitIfLink the speedLimitIfLink to set
-     */
-    public void setSpeedLimitIfLink(int speedLimitIfLink)
-    {
-        this.speedLimitIfLink = speedLimitIfLink;
+        // Teil 2: benachbarte Crossings laden und Verbindungen erzeugen
+        ArrayList<CrossingConnection> neighbours = new ArrayList<>();
+        for (Link link : links) {
+            if (link.goesCounterOneWay()) {
+                // Weg führt entgegen einer Einbahnstraße, wir dürfen hier also nicht fahren.
+                // Also nehmen wir ihn nicht in die Liste der validen Verbindungen auf.
+                continue;
+            }
+            
+            Crossing lastCrossing = link.getLastCrossing();
+            lastCrossing.setMaxDurationToReachCrossing(maxDurationToReachCrossing + link.getDriveDuration());
+            neighbours.add(new CrossingConnection(lastCrossing, link));
+        }
+        
+        targets = neighbours.toArray(new CrossingConnection[neighbours.size()]);
+        return targets;
     }
 }

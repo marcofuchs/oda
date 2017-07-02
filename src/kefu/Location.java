@@ -1,24 +1,19 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package kefu;
-
 import com.vividsolutions.jts.geom.Geometry;
 
 /**
- *
+ * Stellt die Geometrie eines Objekt auf der Karte dar und enthält zusätzlich noch dessen Namen
+ * 
  * @author marco
  */
-class Point
+
+public class Location
 {
     private Geometry geo;
-    
     private String name;
 
     /**
-     * @return the lat
+     * @return die Geometrie des Objektes
      */
     public Geometry getGeo()
     {
@@ -26,7 +21,7 @@ class Point
     }
 
     /**
-     * @param lat the lat to set
+     * @param newGeo legt die Geometrie des Objektes fest
      */
     public void setGeo(Geometry newGeo)
     {
@@ -34,7 +29,7 @@ class Point
     }
 
     /**
-     * @return the lon
+     * @return der Name des Objektes
      */
     public String getName()
     {
@@ -42,14 +37,20 @@ class Point
     }
 
     /**
-     * @param lon the lon to set
+     * @param newName Neuen Namen fuer das Objekt festlegen
      */
     public void setName(String newName)
     {
         this.name = newName;
     }
     
-    Point(Geometry geo, String name)
+    /**
+     * Erzeugt ein neues Objekt mit entsprechender Geometrie und entsprechendem Namen
+     * 
+     * @param geo
+     * @param name
+     */
+    public Location(Geometry geo, String name)
     {
         this.geo = geo;
         this.name = name;

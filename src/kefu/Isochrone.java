@@ -1,43 +1,62 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package kefu;
 
+import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.io.ParseException;
+
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
  * @author marco
  */
-public class Isochrone 
-{
+public class Isochrone {
     /**
-     * @param args the command line arguments
+     * @param args command line arguments
      * @throws java.sql.SQLException
+     * @throws com.vividsolutions.jts.io.ParseException
      */
-    public static void main(String[] args) throws SQLException, ParseException 
-    {
-        // TODO code application logic here
-        if (args.length == 0 || !Datareader.createStaticNavData(args[1]))
-        {
-            System.out.println("NavData konnte nicht erzeugt werden. Programm wird beendet.");
+    public static void main(String[] args) throws SQLException, ParseException {
+        if (args.length != 7) {
+            System.out.println("FEHLER: Anzahl der Argumente passt nicht. Programm wird beendet.");
             return;
         }
+
+        int lat = (int) (Double.parseDouble(args[2]) * 1000000);
+        int lon = (int) (Double.parseDouble(args[3]) * 1000000);
+        int mins = Integer.parseInt(args[4]);
+        int lowerBound = Integer.parseInt(args[5]);
+        int upperBound = Integer.parseInt(args[6]);
+
+        System.out.println("Generiere NavData...");
+
+        IsochroneCalculator calculator = new IsochroneCalculator(args[1]);
+        if (!calculator.initializeNavData()) {
+            // NavData konnte nicht initialisiert werden.
+            return;
+        }
+
+        List<Coordinate> coords = calculator.createIsochrone(lat, lon, (double) mins);
+        ArrayList<double[]> concaveHull = CoordCalculator.createConcaveHull(coords);
         
-        double lat = Double.parseDouble(args[2]) * 1000000;
-        double lon = Double.parseDouble(args[3]) * 1000000;
-        int mins = Integer.parseInt(args[4]);//80;//
-               
-        Crossing cr = Datareader.ReadNearestCrossing((int)lat, (int)lon);
-        Crossing[] allPoints = Crossing.drive(mins, cr);
+        if (concaveHull == null) {
+            // Maximal eine einzige Koordinate wurde gefunden
+            // => Programm kann nicht erfolgreich beendet werden, da mindestens zwei benötigt werden,
+            //    bzw drei, wenn man auch eine Fläche erhalten möchte.
+            return;
+        }
+
+        if (!DbConnection.connect(args[0]))
+        {
+            // Keine Datenbankverbindung => Wir können nicht weitermachen.
+            return;
+        }
+
+        List<Location> reachableLocations = CoordCalculator.calculateReachableLocations(concaveHull, lowerBound, upperBound);
         
-        Datareader.disposeStaticNavData();
+        DbConnection.close();
         
-        DbConnection.Connect(args[0]);
-        
-        Writer.WritePoints(allPoints, lat, lon, mins, args[5], args[6]);
+        Writer.writePoints(lat, lon, mins, concaveHull, reachableLocations, lowerBound, upperBound);
     }
 }

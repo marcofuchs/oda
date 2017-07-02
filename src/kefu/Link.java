@@ -1,330 +1,228 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package kefu;
 
+import com.vividsolutions.jts.geom.Coordinate;
 import fu.keys.LSIClass;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import nav.NavData;
 
 /**
- *
+ * Stellt eine Verbindung zwischen zwei Kreuzungen dar
  * @author marco
  */
-public class Link
-{
-    private static int nextId = 0;
-    
+public class Link {
     private final int id;
-    private Crossing firstCrossing;
     private Crossing lastCrossing;
     private Domain domain;
     private Way[] ways;
     private int length;
-    private int linkType;
-    private int speedLimit;    
-    private OneWay oneWay;
+    private int speedLimit;
+    private boolean goesCounterOneWay;
     private boolean linkDetailsLoaded = false;
     private LSIClass lsiClass;
+    private double latLongDifferenceOfAllWays = 0;
+
+    /**
+     * Gibt zurück, ob der Link entgegen einer Einbahnstraße läuft
+     * @return
+     */
+    public boolean goesCounterOneWay() {
+        return goesCounterOneWay;
+    }
 
     /**
      * @return the id
      */
-    public int getId()
-    {
+    public int getId() {
         return id;
-    }
-
-    /**
-     * @return the firstCrossing
-     */
-    public Crossing getFirstCrossing()
-    {
-        return firstCrossing;
     }
 
     /**
      * @return the lastCrossing
      */
-    public Crossing getLastCrossing()
-    {
+    public Crossing getLastCrossing() {
         return lastCrossing;
     }
 
     /**
-     * @return the domain
+     * Findet heraus, wie lange es dauert, diesen Link komplett abzufahren
+     * @return
      */
-    public Domain getDomain()
-    {
-        return domain;
+    public double getDriveDuration() {
+        double maxSpeedMeterPerMinute = speedLimit * 1000 / (double) 60;
+
+        return (double) length / maxSpeedMeterPerMinute;
     }
 
     /**
-     * @return the ways
-     */
-    public Way[] getWays()
-    {
-        return ways;
-    }
-
-    /**
-     * @return the length
-     */
-    public int getLength()
-    {
-        return length;
-    }
-
-    /**
-     * @return the linkType
-     */
-    public int getLinkType()
-    {
-        return linkType;
-    }
-
-    /**
-     * @return the speedLimit
-     */
-    public int getSpeedLimit()
-    {
-        return speedLimit;
-    }
-
-    /**
-     * @return the oneWay
-     */
-    public OneWay getOneWay()
-    {
-        return oneWay;
-    }
-    
-    /**
-     *
+     * Erzeugt einen neuen Link mit der gegebenen Id.
      * @param id
      */
-    public Link(int id)
-    {
+    private Link(int id) {
         this.id = id;
-        
-        try
-        {
-            LoadLinkDetails();
-        } catch (Exception ex)
-        {
-            Logger.getLogger(Link.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
-    
-    private void LoadLinkDetails() throws Exception
-    {
-        if (linkDetailsLoaded)
-        {
-            throw new Exception("Link is already loaded");
-        }
-        
-        try
-        {
-            domain = Datareader.ReadDomain(Datareader.GetDomainOfLink(id));
-            ways = Datareader.getWaysOfLink(domain, id);
-            length = Datareader.getLinkLength(id);
-            speedLimit = Datareader.getMaxSpeed(id);
-            oneWay = Datareader.getOneWayInformation(id);
-            
-            firstCrossing = Datareader.LoadCrossingFrom(id);
-            lastCrossing = Datareader.LoadCrossingTo(id);
-            
-            lsiClass = Datareader.getLSIClassOfLink(id);
-            
-            linkDetailsLoaded = true;
-            
-            int streetDriverLimit = ObjectTypes.getLimit(lsiClass.lsiClass);
-            
-            if (streetDriverLimit < speedLimit || speedLimit == 0)
-            {
-                speedLimit = streetDriverLimit;
-            }
-            
-            // TODO: Auf LSIClass umstellen, um Speedlimit zu bekommen.
-            //if (speedLimit == 0)
-            //{
-                //if (domain.getName().startsWith("A "))
-                //{
-                    //// Auf der Autobahn fahren wir 150
-                  //  speedLimit = 150;
-                //}
-                //else
-                //{
-                    // Meistens maximal 100
-                    //speedLimit = 100;
-                    //for (Character singlechar : domain.getName().toCharArray())
-                    //{
-                        //if (!"ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789".contains(singlechar.toString()))
-                        //{
-                        //    // Enthält nicht nur Großbuchstaben und Zahlen => Straßenname => Innerorts => 50
-                      //      speedLimit = 50;
-                    //        break;
-                  //      }
-                //    }
-              //  }
-            //}
-        } 
-        catch (Exception ex)
-        {
-            Logger.getLogger(Link.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    
+
     /**
-     *
-     * @param minutes
+     * Erzeugt anhand der Id den entsprechenden Link
+     * 
+     * @param navData NavData
+     * @param id Id der Straße
+     * @param first die Kreuzung, von der aus man in die Straße reinfährt
      * @return
      */
-    public Crossing[] CreateCrossing(double minutes)
-    {
-        double maxSpeedMeterPerMinute = speedLimit * 1000 / (double)60;
-        
-        // Wir werden auf diesem Weg fertig.
-        // Berechnen, wo genau!
-        Way[] linkWays = ways;
-        List<Crossing> allCrossings = new ArrayList<>();
+    public static Link readLink(NavData navData, int id, Crossing first) {
+        Link newLink = new Link(id);
+        newLink.loadLinkDetails(navData, first);
 
-        for (Way fWay : linkWays)
-        {
-            double a2 = fWay.getFirstX() - fWay.getSecondX();
-            a2 *= a2;
-            double b2 = fWay.getFirstY() - fWay.getSecondY();
-            b2 *= b2;
+        return newLink;
+    }
 
-            //Pythagoras!
-            double wayLenght = Math.sqrt(a2 + b2);
+    /**
+     * Lädt die Details des Links
+     * @param navData
+     * @param first Kreuzung, von der aus man in den Link reinfährt
+     */
+    private void loadLinkDetails(NavData navData, Crossing first) {
+        if (linkDetailsLoaded) {
+            // Alle Details wurden schon geladen.
+            return;
+        }
 
-            double driveTimeForWay = wayLenght / maxSpeedMeterPerMinute;
-            minutes -= driveTimeForWay;
+        domain = Domain.getDomainOfLink(navData, id);
+        ways = loadWays(navData);
+        length = navData.getLengthMeters(id);
+        goesCounterOneWay = navData.goesCounterOneway(id);
+        lsiClass = StreetTypes.getLsiClass(navData.getLSIclass(id));
+        speedLimit = navData.getMaxSpeedKMperHours(id);
 
-            if (minutes > 0)
-            {
-                nextId -= 1;
-                Crossing crn = new Crossing(nextId, fWay.getSecondX(), fWay.getSecondY(), false);
-                crn.setSpeedLimitIfLink(speedLimit);
-                allCrossings.add(crn);
-                
-                continue;
+        lastCrossing = Crossing.create(navData, navData.getCrossingIDTo(id), first.getId());
+
+        // Wichtige Überprüfungen zu den Wegen
+        if (ways[0].getFirstX() != first.getLat() && ways[0].getFirstY() != first.getLon()) {
+            // => Die Domain hat die Wege entgegen unserer Reihenfolge gespeichert.
+            // => Umdrehen erforderlich, weil wir die Wege sonst falsch abfahren.
+            Way[] revertedWays = new Way[ways.length];
+            for (int i = ways.length - 1; i >= 0; i--) {
+                revertedWays[ways.length - i - 1] = new Way(ways[i].getSecondX(), ways[i].getSecondY(), ways[i].getFirstX(), ways[i].getFirstY());
             }
-            else if (minutes == 0)
-            {
-                nextId -= 1;
-                Crossing crn = new Crossing(nextId, fWay.getSecondX(), fWay.getSecondY(), false);
-                crn.setSpeedLimitIfLink(speedLimit);
-                allCrossings.add(crn);
-                
-                return allCrossings.toArray(new Crossing[allCrossings.size()]);
-            }
-            else if (minutes < 0)
-            {
-                // Wir werden auf einem Teil des Weges fertig.
-                double part = (minutes + driveTimeForWay) / driveTimeForWay;
 
-                int smallerLat = fWay.getFirstX();
-                if (fWay.getSecondX() < smallerLat)
-                {
-                    smallerLat = fWay.getSecondX();
-                }
+            ways = revertedWays;
+        }
 
-                int smallerLon = fWay.getFirstY();
-                if (fWay.getSecondY() < smallerLon)
-                {
-                    smallerLon = fWay.getSecondY();
-                }
+        // Berechnung der Länge der Wege
+        for (Way way : ways) {
+            latLongDifferenceOfAllWays += way.getLength();
+        }
 
-                int fX = fWay.getFirstX() - smallerLat;
-                int fY = fWay.getFirstY() - smallerLon;
-                int sX = fWay.getSecondX()- smallerLat;
-                int sY = fWay.getSecondY()- smallerLon;
-
-                int pX;
-                if (fX > 0)
-                {
-                    pX = fX - (int)(part * fX) + smallerLat;
-                }
-                else 
-                {
-                    pX = (int)(part * sX + smallerLat);
-                }
-
-                int pY;
-                if (fY > 0)
-                {
-                    pY = fY - (int)(part * fY) + smallerLon;
-                }
-                else 
-                {
-                    pY = (int)(part * sY + smallerLon);
-                }
-                
-                nextId -= 1;
-                Crossing crn = new Crossing(nextId, pX, pY, false);
-                crn.setSpeedLimitIfLink(speedLimit);
-                //crn.setSpeedLimitIfLink(0);
-                allCrossings.add(crn);
-                
-                return allCrossings.toArray(new Crossing[allCrossings.size()]);
+        for (Way way : ways) {
+            if (latLongDifferenceOfAllWays > 0) {
+                way.setLength(way.getLength() * length / latLongDifferenceOfAllWays);
+            } else {
+                way.setLength(0);
             }
         }
-        
-        return null;
+
+        // Entscheidung, wie schnell wir auf dieser Straße fahren
+        int streetDriverLimit = StreetTypes.getSpeedLimit(lsiClass.lsiClass);
+        if (streetDriverLimit < speedLimit || speedLimit == 0) {
+            speedLimit = streetDriverLimit;
+        }
+
+        linkDetailsLoaded = true;
     }
-    
+
     /**
-     *
+     * Fährt den Weg bis zur angegebenen Maximalzeit ab und zählt ab der angegebenen Startzeit
+     * @param time Startzeit
+     * @param maxTime Maximale Zeit
+     * @return Koordinaten der Wegpunkte
+     */
+    public List<Coordinate> drive(double time, double maxTime) {
+        List<Coordinate> coords = new ArrayList<>();
+        double maxSpeedMeterPerMinute = speedLimit * 1000 / (double) 60;
+
+        for (Way way : ways) {
+            double driveTimeForWay = way.getLength() / maxSpeedMeterPerMinute;
+            time += driveTimeForWay;
+
+            if (time <= maxTime) {
+                coords.add(new Coordinate(way.getSecondX(), way.getSecondY()));
+
+                if (time == maxTime) {
+                    // Punktlandung => Muss man nicht mehr weiterrechnen
+                    break;
+                }
+            } else {
+                // Die Zeit wird auf diesem Way verbraucht!
+                // => Endkoordinate finden.
+                coords.add(driveWayUntilTimeIsOver(time, maxTime, driveTimeForWay, way));
+                break;
+            }
+        }
+
+        return coords;
+    }
+
+    /**
+     * Findet heraus, wie lange man auf dem Weg noch fahren kann, bis die Maximalzeit erreicht ist und setzt dort eine Koordinate, die er zurückgibt.
+     * 
+     * @param currentTime aktuelle Zeit, aber der gezählt werden soll
+     * @param maxTime Maximalzeit
+     * @param driveTimeForWay Zeit, die es braucht, um den Weg ganz abzufahren
+     * @param fWay der zu fahrende Weg
      * @return
      */
-    public Crossing[] getWaysAsCrossings()
-    {        
-        Crossing[] ncr = new Crossing[ways.length - 1];
-        for (int i = 0; i < ways.length - 1; i++)
-        {
-            nextId -= 1;
-            ncr[i] = new Crossing(nextId, ways[i].getSecondX(), ways[i].getSecondY(), false);
+    private Coordinate driveWayUntilTimeIsOver(double currentTime, double maxTime, double driveTimeForWay, Way fWay) {
+        // Anteil des Weges, der noch innerhalb des Zeitlimits erreicht werden kann, errechnen.
+        double part = (driveTimeForWay - currentTime + maxTime) / driveTimeForWay;
+
+        int smallerLat = fWay.getFirstX();
+        if (fWay.getSecondX() < smallerLat) {
+            smallerLat = fWay.getSecondX();
         }
+
+        int smallerLon = fWay.getFirstY();
+        if (fWay.getSecondY() < smallerLon) {
+            smallerLon = fWay.getSecondY();
+        }
+
+        // Um die Wegstrecke anteilig zu berechnen, müssen wir vorher erst die Latitude und die Longitude, 
+        // die sich beide teilen, rausrechnen,
+        // weil wir sonst falsche Werte rausbekommen
+        int fX = fWay.getFirstX() - smallerLat;
+        int fY = fWay.getFirstY() - smallerLon;
+        int sX = fWay.getSecondX() - smallerLat;
+        int sY = fWay.getSecondY() - smallerLon;
+
         
-        return ncr;
+        // Berechnung der beiden Endkoordinaten
+        int pX;
+        if (fX > 0) {
+            pX = fX - (int) (part * fX) + smallerLat;
+        } else {
+            pX = (int) (part * sX + smallerLat);
+        }
+
+        int pY;
+        if (fY > 0) {
+            pY = fY - (int) (part * fY) + smallerLon;
+        } else {
+            pY = (int) (part * sY + smallerLon);
+        }
+
+        return new Coordinate(pX, pY);
     }
-    
+
     /**
-     *
-     * @param cr
-     * @param minutes
+     * Lädt sämtliche Wege, die dieser Link umspannt
+     * 
+     * @param navData
      * @return
      */
-    public Crossing getAlternativCrossing(Crossing cr, double minutes)
-    {
-        if (cr.getId() == firstCrossing.getId())
-        {
-            lastCrossing.setMaxMinutesOnCrossing(minutes + getDurationToDrive());
-            lastCrossing.setSpeedLimitIfLink(speedLimit);
-            return lastCrossing;
-        }
-        else  
-        {
-            firstCrossing.setMaxMinutesOnCrossing(minutes + getDurationToDrive());
-            firstCrossing.setSpeedLimitIfLink(speedLimit);
-            return firstCrossing;
-        }
-    }
-    
-    /**
-     *
-     * @return
-     */
-    public double getDurationToDrive()
-    {
-        double maxSpeedMeterPerMinute = speedLimit * 1000 / (double)60;
-        
-        return (double) length / maxSpeedMeterPerMinute;
+    private Way[] loadWays(NavData navData) {
+        int firstWayNumber = navData.getDomainPosNrFrom(id);
+        int secondWayNumber = navData.getDomainPosNrTo(id);
+
+        return domain.getWaysPart(firstWayNumber, secondWayNumber);
     }
 }
