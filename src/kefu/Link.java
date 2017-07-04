@@ -8,9 +8,24 @@ import nav.NavData;
 
 /**
  * Stellt eine Verbindung zwischen zwei Kreuzungen dar
+ *
  * @author marco
  */
 public class Link {
+    /**
+     * Erzeugt anhand der Id den entsprechenden Link
+     *
+     * @param navData NavData
+     * @param id Id der Straße
+     * @param first die Kreuzung, von der aus man in die Straße reinfährt
+     * @return
+     */
+    public static Link readLink(NavData navData, int id, Crossing first) {
+        Link newLink = new Link(id);
+        newLink.loadLinkDetails(navData, first);
+
+        return newLink;
+    }
     private final int id;
     private Crossing lastCrossing;
     private Domain domain;
@@ -23,7 +38,17 @@ public class Link {
     private double latLongDifferenceOfAllWays = 0;
 
     /**
+     * Erzeugt einen neuen Link mit der gegebenen Id.
+     *
+     * @param id
+     */
+    private Link(int id) {
+        this.id = id;
+    }
+
+    /**
      * Gibt zurück, ob der Link entgegen einer Einbahnstraße läuft
+     *
      * @return
      */
     public boolean goesCounterOneWay() {
@@ -46,6 +71,7 @@ public class Link {
 
     /**
      * Findet heraus, wie lange es dauert, diesen Link komplett abzufahren
+     *
      * @return
      */
     public double getDriveDuration() {
@@ -55,30 +81,8 @@ public class Link {
     }
 
     /**
-     * Erzeugt einen neuen Link mit der gegebenen Id.
-     * @param id
-     */
-    private Link(int id) {
-        this.id = id;
-    }
-
-    /**
-     * Erzeugt anhand der Id den entsprechenden Link
-     * 
-     * @param navData NavData
-     * @param id Id der Straße
-     * @param first die Kreuzung, von der aus man in die Straße reinfährt
-     * @return
-     */
-    public static Link readLink(NavData navData, int id, Crossing first) {
-        Link newLink = new Link(id);
-        newLink.loadLinkDetails(navData, first);
-
-        return newLink;
-    }
-
-    /**
      * Lädt die Details des Links
+     *
      * @param navData
      * @param first Kreuzung, von der aus man in den Link reinfährt
      */
@@ -132,7 +136,9 @@ public class Link {
     }
 
     /**
-     * Fährt den Weg bis zur angegebenen Maximalzeit ab und zählt ab der angegebenen Startzeit
+     * Fährt den Weg bis zur angegebenen Maximalzeit ab und zählt ab der
+     * angegebenen Startzeit
+     *
      * @param time Startzeit
      * @param maxTime Maximale Zeit
      * @return Koordinaten der Wegpunkte
@@ -164,8 +170,10 @@ public class Link {
     }
 
     /**
-     * Findet heraus, wie lange man auf dem Weg noch fahren kann, bis die Maximalzeit erreicht ist und setzt dort eine Koordinate, die er zurückgibt.
-     * 
+     * Findet heraus, wie lange man auf dem Weg noch fahren kann, bis die
+     * Maximalzeit erreicht ist und setzt dort eine Koordinate, die er
+     * zurückgibt.
+     *
      * @param currentTime aktuelle Zeit, aber der gezählt werden soll
      * @param maxTime Maximalzeit
      * @param driveTimeForWay Zeit, die es braucht, um den Weg ganz abzufahren
@@ -194,7 +202,6 @@ public class Link {
         int sX = fWay.getSecondX() - smallerLat;
         int sY = fWay.getSecondY() - smallerLon;
 
-        
         // Berechnung der beiden Endkoordinaten
         int pX;
         if (fX > 0) {
@@ -215,7 +222,7 @@ public class Link {
 
     /**
      * Lädt sämtliche Wege, die dieser Link umspannt
-     * 
+     *
      * @param navData
      * @return
      */

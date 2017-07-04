@@ -6,6 +6,7 @@ import java.util.List;
 import pp.dorenda.client2.additional.UniversalPainterWriter;
 
 /**
+ * Klasse zum Schreiben in den UniversalPainterWriter
  *
  * @author marco
  */
@@ -13,15 +14,13 @@ public class Writer {
     /**
      * Schreibt Ergebnisse der Isochrone-Berechnung in die results.txt
      *
-     * @param concaveHull
-     * @param reachableStores
-     * @param startlat
-     * @param startlon
-     * @param minutes
-     * @param lowerbound
-     * @param upperbound
+     * @param hull Die umgebende Geometrie, die gezeichnet werden soll
+     * @param reachableStores alle erreichbaren Geschäfte innerhalb der Grenzen
+     * @param startlat Latitude des Startpunkts
+     * @param startlon Longitude des Startpunkts
+     * @param minutes Zeit, die man gefahren ist
      */
-    public static void writePoints(double startlat, double startlon, int minutes, ArrayList<double[]> concaveHull, List<Location> reachableStores, int lowerbound, int upperbound) {
+    public static void writePoints(double startlat, double startlon, int minutes, ArrayList<double[]> hull, List<Location> reachableStores) {
         System.out.println("Schreibe Ergebnisse in Datei...");
 
         System.out.println("Oeffne results.txt");
@@ -42,7 +41,7 @@ public class Writer {
 
         // Konkave Hülle schreiben
         System.out.println("Schreibe results.txt -> Concave Hull");
-        writer.polygon(concaveHull, 0, 0, 255, 50);
+        writer.polygon(hull, 0, 0, 255, 50);
 
         // Erreichbare Geschäfte schreiben
         System.out.println("Schreibe results.txt -> Locations");

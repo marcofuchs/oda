@@ -1,48 +1,41 @@
 package kefu;
+
 import fu.keys.LSIClass;
 import fu.keys.LSIClassCentre;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
-
 /**
  * Handhabt die Typen und Geschwindigkeitsbegrenzungen der Links
- * 
+ *
  * @author marco
  */
-public class StreetTypes
-{
+public class StreetTypes {
     private static final Map<Integer, LSIClass> streetTypes = new HashMap<>();
     private static final Map<Integer, Integer> speedLimits = new HashMap<>();
 
     /**
      * Lädt die zugehörige LSI-Klasse zu einem Link und gibt diese zurück
-     * 
+     *
      * @param id
      * @return die zugehoerige LSIKlasse
      */
-    public static LSIClass getLsiClass(int id)
-    {
-        if (!streetTypes.containsKey(id))
-        {
+    public static LSIClass getLsiClass(int id) {
+        if (!streetTypes.containsKey(id)) {
             streetTypes.put(id, LSIClassCentre.lsiClassByID(id));
         }
-        
+
         return streetTypes.get(id);
     }
-    
+
     /**
      * Findet das Speedlimit des entsprechenden Links heraus
-     * 
+     *
      * @param id
      * @return die Geschwindigkeitsbegrenzung einer LSIKlasse
      */
-    public static Integer getSpeedLimit(int id)
-    {
-        switch (id)
-        {
+    public static Integer getSpeedLimit(int id) {
+        switch (id) {
             case 34110000:
                 // Autobahn
                 return 120;
@@ -91,12 +84,11 @@ public class StreetTypes
             case 34175000:
                 // Anschlussstelle (tertiaer)
                 return 40;
-            default: 
+            default:
                 return 45;
         }
     }
 
-    private StreetTypes()
-    {
+    private StreetTypes() {
     }
 }

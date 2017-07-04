@@ -5,19 +5,19 @@
  */
 package kefu;
 
-import fu.util.ConcaveHullGenerator;
-import java.util.ArrayList;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.io.ParseException;
+import fu.util.ConcaveHullGenerator;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Erstellt die konkave Hülle und kann die Suche nach Geschäften initiieren.
- * 
+ *
  * @author marco
  */
 public class CoordCalculator {
@@ -68,7 +68,8 @@ public class CoordCalculator {
      * Sucht aus der Datenbank alle Objekte der gewünschten LSIClasses heraus,
      * die innerhalb der Hülle liegen.
      *
-     * @param geoServDbConn Verbindung zur Datenbank, aus der die Geschäfte gelesen werden sollen
+     * @param geoServDbConn Verbindung zur Datenbank, aus der die Geschäfte
+     * gelesen werden sollen
      * @param hull die Hülle, in der die Objekte liegen sollen
      * @param lowerbound untere Grenze der LSIClasses
      * @param upperbound obere Grenze der LSIClasses
@@ -95,12 +96,15 @@ public class CoordCalculator {
         }
 
         Coordinate[] coordArray = coords.toArray(new Coordinate[coords.size()]);
-        
+
         // Suchen der Objekte in der Datenbank
         Geometry polygon = geomfact.createPolygon(geomfact.createLinearRing(coordArray), new LinearRing[0]);
         List<Location> allStoresInRange = geoServDbConn.getPossibleInRangeObjects(lowerbound, upperbound, polygon);
         System.out.println("Fertig.");
 
         return allStoresInRange;
+    }
+
+    private CoordCalculator() {
     }
 }

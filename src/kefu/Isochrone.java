@@ -2,12 +2,12 @@ package kefu;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.io.ParseException;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Startklasse für die Isochrone-Berechnung
  *
  * @author marco
  */
@@ -38,7 +38,7 @@ public class Isochrone {
         }
 
         List<Coordinate> coords = calculator.createIsochrone(lat, lon, (double) mins);
-        
+
         if (coords == null) {
             return;
         }
@@ -62,7 +62,7 @@ public class Isochrone {
 
         geoServDbConn.close();
 
-        Writer.writePoints(lat, lon, mins, concaveHull, reachableLocations, lowerBound, upperBound);
+        Writer.writePoints(lat, lon, mins, concaveHull, reachableLocations);
 
         System.out.println("Berechnungen wurden abgeschlossen, Programm wurde beendet.");
     }

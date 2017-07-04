@@ -24,6 +24,16 @@ public class DbConnection {
     private boolean alreadyConnected = false;
 
     /**
+     * Erzeugt eine neue Instanz einer Datenbankverbindung und Bereitet diese
+     * vor
+     *
+     * @param connectionString
+     */
+    public DbConnection(String connectionString) {
+        this.connectionString = connectionString;
+    }
+
+    /**
      * Versucht, eine Datenbankverbindung herzustellen und gibt bei Erfolg
      * 'true' zurück.
      *
@@ -116,7 +126,7 @@ public class DbConnection {
     public void close() {
         try {
             alreadyConnected = false;
-            
+
             if (connection == null || connection.isClosed()) {
                 return;
             }
@@ -126,11 +136,4 @@ public class DbConnection {
         }
     }
 
-    /**
-     * Erzeugt eine neue Instanz einer Datenbankverbindung und Bereitet diese vor
-     * @param connectionString
-     */
-    public DbConnection(String connectionString) {
-        this.connectionString = connectionString;
-    }
 }

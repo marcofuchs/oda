@@ -13,6 +13,7 @@ import java.util.Map;
 import nav.NavData;
 
 /**
+ * Berechnet die Isochrone
  *
  * @author marco
  */
@@ -65,7 +66,7 @@ public class IsochroneCalculator {
         allReachableCoords.add(new Coordinate(startLat, startLon));
 
         Crossing start = Crossing.readNearesCrossingFromNavData(navData, startLat, startLon);
-        
+
         if (start == null) {
             System.out.println("FEHLER: Zum angegebenen Punkt konnte keine nächste Kreuzung gefunden werden.");
             System.out.println("Möglicherweise befindet der angegebene Startpunkt außerhalb der Karte.");
@@ -75,7 +76,7 @@ public class IsochroneCalculator {
         }
 
         Map<Integer, Crossing> closed = new HashMap<>();
-        MapQueue opened = new MapQueue();
+        CrossingMapQueue opened = new CrossingMapQueue();
 
         opened.add(start);
 
@@ -121,7 +122,7 @@ public class IsochroneCalculator {
      * @return Koordinaten der von diesem Knoten aus fahrbaren Straßen innerhalb
      * des Zeitlimits
      */
-    private List<Coordinate> expand(Crossing current, MapQueue opened, Map<Integer, Crossing> closed, double maxMinutes) {
+    private List<Coordinate> expand(Crossing current, CrossingMapQueue opened, Map<Integer, Crossing> closed, double maxMinutes) {
         List<Coordinate> reachableCoords = new ArrayList<>();
 
         CrossingConnection[] neighbours = current.getNeighbours(navData);

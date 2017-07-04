@@ -14,6 +14,21 @@ public class Way {
     private double length = -1;
 
     /**
+     * Erzeugt einen neuen Way mit gegebener Start- und Endkoordinate
+     *
+     * @param fX : first X
+     * @param fY : first Y
+     * @param sX : second X
+     * @param sY : second Y
+     */
+    public Way(int fX, int fY, int sX, int sY) {
+        this.firstX = fX;
+        this.firstY = fY;
+        this.secondX = sX;
+        this.secondY = sY;
+    }
+
+    /**
      * @return the firstX
      */
     public int getFirstX() {
@@ -71,7 +86,7 @@ public class Way {
 
     /**
      * Errechnet die Länge dieses Weges.
-     * 
+     *
      * @return
      */
     public double getLength() {
@@ -95,18 +110,4 @@ public class Way {
         this.length = length;
     }
 
-    /**
-     * Erzeugt einen neuen Way mit gegebener Start- und Endkoordinate
-     * 
-     * @param fX : first X
-     * @param fY : first Y
-     * @param sX : second X
-     * @param sY : second Y
-     */
-    public Way(int fX, int fY, int sX, int sY) {
-        this.firstX = fX;
-        this.firstY = fY;
-        this.secondX = sX;
-        this.secondY = sY;
-    }
 }
