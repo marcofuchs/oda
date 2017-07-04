@@ -68,6 +68,7 @@ public class CoordCalculator {
      * Sucht aus der Datenbank alle Objekte der gewünschten LSIClasses heraus,
      * die innerhalb der Hülle liegen.
      *
+     * @param geoServDbConn Verbindung zur Datenbank, aus der die Geschäfte gelesen werden sollen
      * @param hull die Hülle, in der die Objekte liegen sollen
      * @param lowerbound untere Grenze der LSIClasses
      * @param upperbound obere Grenze der LSIClasses
@@ -76,7 +77,7 @@ public class CoordCalculator {
      * @throws SQLException
      * @throws ParseException
      */
-    public static List<Location> calculateReachableLocations(List<double[]> hull, int lowerbound, int upperbound) throws NumberFormatException, SQLException, ParseException {
+    public static List<Location> calculateReachableLocations(DbConnection geoServDbConn, List<double[]> hull, int lowerbound, int upperbound) throws NumberFormatException, SQLException, ParseException {
         System.out.println("Suche nach erreichbaren Zielobjekten...");
 
         // Umwandeln der Koordinaten in die benötigte Form (Longitude, Latitude)
@@ -88,7 +89,8 @@ public class CoordCalculator {
 
         if (coords.size() < 4) {
             // Nicht genug Koordinaten, um Geschäfte zu suchen.
-            // Vier unterschiedliche Punkte werden benötigt.
+            // Vier Punkte werden benötigt.
+            System.out.println("WARNUNG: Die Suche nach Geschäften wird übersprungen, da weniger als vier Punkte gefunden wurden.");
             return new ArrayList<>();
         }
 
@@ -96,7 +98,7 @@ public class CoordCalculator {
         
         // Suchen der Objekte in der Datenbank
         Geometry polygon = geomfact.createPolygon(geomfact.createLinearRing(coordArray), new LinearRing[0]);
-        List<Location> allStoresInRange = DbConnection.getPossibleInRangeObjects(lowerbound, upperbound, polygon);
+        List<Location> allStoresInRange = geoServDbConn.getPossibleInRangeObjects(lowerbound, upperbound, polygon);
         System.out.println("Fertig.");
 
         return allStoresInRange;

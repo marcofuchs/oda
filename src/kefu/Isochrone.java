@@ -38,8 +38,13 @@ public class Isochrone {
         }
 
         List<Coordinate> coords = calculator.createIsochrone(lat, lon, (double) mins);
-        ArrayList<double[]> concaveHull = CoordCalculator.createConcaveHull(coords);
         
+        if (coords == null) {
+            return;
+        }
+
+        ArrayList<double[]> concaveHull = CoordCalculator.createConcaveHull(coords);
+
         if (concaveHull == null) {
             // Maximal eine einzige Koordinate wurde gefunden
             // => Programm kann nicht erfolgreich beendet werden, da mindestens zwei benötigt werden,
@@ -47,16 +52,18 @@ public class Isochrone {
             return;
         }
 
-        if (!DbConnection.connect(args[0]))
-        {
+        DbConnection geoServDbConn = new DbConnection(args[0]);
+        if (!geoServDbConn.connect()) {
             // Keine Datenbankverbindung => Wir können nicht weitermachen.
             return;
         }
 
-        List<Location> reachableLocations = CoordCalculator.calculateReachableLocations(concaveHull, lowerBound, upperBound);
-        
-        DbConnection.close();
-        
+        List<Location> reachableLocations = CoordCalculator.calculateReachableLocations(geoServDbConn, concaveHull, lowerBound, upperBound);
+
+        geoServDbConn.close();
+
         Writer.writePoints(lat, lon, mins, concaveHull, reachableLocations, lowerBound, upperBound);
+
+        System.out.println("Berechnungen wurden abgeschlossen, Programm wurde beendet.");
     }
 }

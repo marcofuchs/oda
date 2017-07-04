@@ -65,6 +65,14 @@ public class IsochroneCalculator {
         allReachableCoords.add(new Coordinate(startLat, startLon));
 
         Crossing start = Crossing.readNearesCrossingFromNavData(navData, startLat, startLon);
+        
+        if (start == null) {
+            System.out.println("FEHLER: Zum angegebenen Punkt konnte keine nächste Kreuzung gefunden werden.");
+            System.out.println("Möglicherweise befindet der angegebene Startpunkt außerhalb der Karte.");
+            System.out.println("Berechnung kann nicht durchgeführt werden.");
+            System.out.println("Programm wird beendet.");
+            return null;
+        }
 
         Map<Integer, Crossing> closed = new HashMap<>();
         MapQueue opened = new MapQueue();

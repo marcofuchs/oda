@@ -5,7 +5,7 @@ import nav.NavData;
 
 /**
  * Stellt eine Kreuzung im Straßennetz dar.
- * 
+ *
  * @author marco
  */
 public class Crossing {
@@ -75,16 +75,17 @@ public class Crossing {
         this.lon = lon;
         this.ancestorId = ancestorId;
     }
-    
+
     /**
      * Erzeugt ein neues Crossing anhand der mitgegebenen Daten
-     * 
+     *
      * @param navData NavData-Klasse
      * @param crossingId ID des Crossing
      * @param ancestorId ID des Vorgängers
-     * @return ein neues Crossing, das als Ziel des Vorgängers genutzt werden kann
+     * @return ein neues Crossing, das als Ziel des Vorgängers genutzt werden
+     * kann
      */
-    public static Crossing create(NavData navData, int crossingId, int ancestorId){
+    public static Crossing create(NavData navData, int crossingId, int ancestorId) {
         int crossingLat = navData.getCrossingLatE6(crossingId);
         int crossingLon = navData.getCrossingLongE6(crossingId);
         boolean crossingIsolated = navData.isIsolatedCrossing(crossingId);
@@ -102,7 +103,15 @@ public class Crossing {
      * @return das naeheste Crossing zu gegebener Latitude und Longitude
      */
     public static Crossing readNearesCrossingFromNavData(NavData navData, int lat, int lon) {
-        int crossingId = navData.getNearestCrossing(lat, lon);
+        int crossingId = navData.getNearestCrossing(lat, lon);;
+
+        if (crossingId == -1) {
+            // Kein nächstes Crossing gefunden.
+            // Mögliche Ursache:
+            // Punkt befindet sich nicht auf mitgegebener Karte.
+            return null;
+        }
+        
         int crossingLat = navData.getCrossingLatE6(crossingId);
         int crossingLon = navData.getCrossingLongE6(crossingId);
         boolean crossingIsolated = navData.isIsolatedCrossing(crossingId);
@@ -111,8 +120,9 @@ public class Crossing {
     }
 
     /**
-     * Sucht die vom Crossing aus erreichbaren Nachbarn, die nicht der Vorgänger des Crossings sind.
-     * 
+     * Sucht die vom Crossing aus erreichbaren Nachbarn, die nicht der Vorgänger
+     * des Crossings sind.
+     *
      * @param navData
      * @return eine Liste der Nachbarn
      */
@@ -121,7 +131,7 @@ public class Crossing {
             // Wir haben die Nachbarn schon mal gesucht.
             return targets;
         }
-        
+
         // Teil 1: Alle Links der Reihe nach analysieren
         int[] ids = navData.getLinksForCrossing(getId());
         int linkCount = ids.length;
@@ -131,7 +141,7 @@ public class Crossing {
         for (int i = 0; i < linkCount; i++) {
             links[i] = Link.readLink(navData, ids[i], this);
         }
-        
+
         // Teil 2: benachbarte Crossings laden und Verbindungen erzeugen
         ArrayList<CrossingConnection> neighbours = new ArrayList<>();
         for (Link link : links) {
@@ -140,12 +150,12 @@ public class Crossing {
                 // Also nehmen wir ihn nicht in die Liste der validen Verbindungen auf.
                 continue;
             }
-            
+
             Crossing lastCrossing = link.getLastCrossing();
             lastCrossing.setMaxDurationToReachCrossing(maxDurationToReachCrossing + link.getDriveDuration());
             neighbours.add(new CrossingConnection(lastCrossing, link));
         }
-        
+
         targets = neighbours.toArray(new CrossingConnection[neighbours.size()]);
         return targets;
     }

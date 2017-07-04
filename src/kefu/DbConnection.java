@@ -19,15 +19,21 @@ import java.util.List;
  * ObjektInformationen(Nicht navData)
  */
 public class DbConnection {
-    private static Connection connection;
-    private static boolean alreadyConnected = false;
+    private Connection connection;
+    private final String connectionString;
+    private boolean alreadyConnected = false;
 
     /**
+     * Versucht, eine Datenbankverbindung herzustellen und gibt bei Erfolg
+     * 'true' zurück.
      *
-     * @param connectionString die Anbindung an den DatenbankServer
      * @return ob das Verbinden mit der DB erfolgreich war
      */
-    public static boolean connect(String connectionString) {
+    public boolean connect() {
+        if (alreadyConnected) {
+            return true;
+        }
+
         try {
             System.out.println("Verbinde mit Datenbank...");
             DBUtil.parseDBparams(connectionString);
@@ -47,8 +53,9 @@ public class DbConnection {
     }
 
     /**
-     * Findet alle Objekte, die innerhalb der gegebenen Geometrie liegen, in der Datenbank
-     * 
+     * Findet alle Objekte, die innerhalb der gegebenen Geometrie liegen, in der
+     * Datenbank
+     *
      * @param lowerBound Die Untergrenze der gewuenschten Objekttypen
      * @param upperBound Die Obergrenze der gewuenschten Objekttypen
      * @param polygon die Geometrie des Bereiches aus dem die Objekte geladen
@@ -57,7 +64,7 @@ public class DbConnection {
      * @throws SQLException
      * @throws ParseException
      */
-    public static List<Location> getPossibleInRangeObjects(int lowerBound, int upperBound, Geometry polygon) throws SQLException, ParseException {
+    public List<Location> getPossibleInRangeObjects(int lowerBound, int upperBound, Geometry polygon) throws SQLException, ParseException {
         if (!alreadyConnected) {
             return null;
         }
@@ -104,10 +111,12 @@ public class DbConnection {
     }
 
     /**
-     * Finalisiert und schliesst die Verbindung
+     * Schliesst die Verbindung
      */
-    public static void close() {
+    public void close() {
         try {
+            alreadyConnected = false;
+            
             if (connection == null || connection.isClosed()) {
                 return;
             }
@@ -117,6 +126,11 @@ public class DbConnection {
         }
     }
 
-    private DbConnection() {
+    /**
+     * Erzeugt eine neue Instanz einer Datenbankverbindung und Bereitet diese vor
+     * @param connectionString
+     */
+    public DbConnection(String connectionString) {
+        this.connectionString = connectionString;
     }
 }
